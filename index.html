@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态加载界面</title>
+    <!-- 引入样式文件 -->
+    <link rel="stylesheet" href="https://unpkg.com/vant@2.12/lib/index.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            background-color: #ccc;
+        }
+
+        #app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .btn-box {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+    <!-- 引入 Vue 和 Vant 的 JS 文件 -->
+    <script src="https://unpkg.com/vue@2.6/dist/vue.min.js"></script>
+    <script src="https://unpkg.com/vant@2.12/lib/vant.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div>
+            <van-cell-group>
+                <van-field v-model="value" label="url地址" placeholder="请输入访问的url地址" />
+            </van-cell-group>
+            <van-cell-group>
+                <van-field v-model="minTime" type="number" label="刷新最小时长" placeholder="请输入刷新最小时长" />
+            </van-cell-group>
+            <van-cell-group>
+                <van-field v-model="maxTime" type="number" label="刷新最大时长" placeholder="请输入刷新最大时长" />
+            </van-cell-group>
+            <van-cell-group>
+                <van-field v-model="count" type="number" label="刷新上限次数" placeholder="请输入刷新上限次数" />
+            </van-cell-group>
+            <van-cell-group>
+                <div class="btn-box">
+                    <van-button type="info" @click="excute">{{isStop ? '开始':"暂停"}}执行{{index > 1 && !isStop
+                        ?index+'次':''}}</van-button>
+                </div>
+            </van-cell-group>
+        </div>
+        <iframe v-if="isExcute" :src="value" style="width: 100vw;flex-grow: 1;"></iframe>
+    </div>
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    value: '',
+                    minTime: 7,
+                    maxTime: 10,
+                    count: 30,
+                    index: 1,
+                    isStop: true,
+                    isExcute: false,
+                    timerInterval: null,
+                }
+            },
+            methods: {
+                excute() {
+                    if (!/^(http|https):\/\//.test(this.value)) {
+                        return vant.Toast('请输入正确的url地址');
+                    }
+                    this.isStop = !this.isStop;
+
+                    if (!this.isStop) {
+                        this.handleTime();
+                    }
+                },
+                handleTime() {
+                    this.isExcute = true;
+                    this.timerInterval = setTimeout(() => {
+                        this.$nextTick(() => {
+                            this.isExcute = false;
+                            setTimeout(() => {
+                                this.index++;
+                            }, 50);
+                        })
+                    }, _.random(this.minTime, this.maxTime) * 1000);
+                }
+            },
+            watch: {
+                index(newVal) {
+                    console.log(newVal, this.count);
+                    if (newVal >= this.count) {
+                        vant.Toast('当前执行已到上限');
+                        return clearInterval(this.timerInterval);
+                    }
+                    this.handleTime();
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
